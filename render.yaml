@@ -1,0 +1,50 @@
+services:
+  # 1. Eureka Discovery Server
+  - type: web
+    name: quickmart-eureka
+    runtime: java
+    buildCommand: cd eureka-server && mvn clean package -DskipTests
+    startCommand: java -jar eureka-server/target/*.jar
+    envVars:
+      - key: PORT
+        value: 8761
+
+  # 2. API Gateway
+  - type: web
+    name: quickmart-gateway
+    runtime: java
+    buildCommand: cd api-gateway && mvn clean package -DskipTests
+    startCommand: java -jar api-gateway/target/*.jar
+    envVars:
+      - key: PORT
+        value: 8080
+
+  # 3. User Service
+  - type: web
+    name: quickmart-user-service
+    runtime: java
+    buildCommand: cd user-service && mvn clean package -DskipTests
+    startCommand: java -jar user-service/target/*.jar
+    envVars:
+      - key: PORT
+        value: 8081
+
+  # 4. Product Service
+  - type: web
+    name: quickmart-product-service
+    runtime: java
+    buildCommand: cd product-service && mvn clean package -DskipTests
+    startCommand: java -jar product-service/target/*.jar
+    envVars:
+      - key: PORT
+        value: 8082
+
+  # 5. Order Service
+  - type: web
+    name: quickmart-order-service
+    runtime: java
+    buildCommand: cd order-service && mvn clean package -DskipTests
+    startCommand: java -jar order-service/target/*.jar
+    envVars:
+      - key: PORT
+        value: 8083
