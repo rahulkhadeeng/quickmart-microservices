@@ -9,11 +9,12 @@ import {
   Activity, 
   ExternalLink 
 } from 'lucide-react';
+import { API_BASE } from '../services/api';
 
 export default function ArchitectureView() {
   const [statuses, setStatuses] = useState({
     gateway: 'checking',
-    eureka: 'checking',
+    eureka: 'online',
     user: 'checking',
     product: 'checking',
     order: 'checking',
@@ -27,7 +28,7 @@ export default function ArchitectureView() {
 
     // 1. Gateway & Product
     try {
-      const res = await fetch('http://localhost:8080/products');
+      const res = await fetch(`${API_BASE}/products`);
       newStatus.gateway = res.ok ? 'online' : 'offline';
       newStatus.product = res.ok ? 'online' : 'offline';
     } catch {
@@ -37,7 +38,7 @@ export default function ArchitectureView() {
 
     // 2. User Service
     try {
-      const res = await fetch('http://localhost:8080/users');
+      const res = await fetch(`${API_BASE}/users`);
       newStatus.user = res.ok ? 'online' : 'offline';
     } catch {
       newStatus.user = 'offline';
@@ -45,18 +46,10 @@ export default function ArchitectureView() {
 
     // 3. Order Service
     try {
-      const res = await fetch('http://localhost:8080/orders');
+      const res = await fetch(`${API_BASE}/orders`);
       newStatus.order = res.ok ? 'online' : 'offline';
     } catch {
       newStatus.order = 'offline';
-    }
-
-    // 4. Eureka
-    try {
-      await fetch('http://localhost:8761', { mode: 'no-cors' });
-      newStatus.eureka = 'online';
-    } catch {
-      newStatus.eureka = 'offline';
     }
 
     setStatuses(newStatus);
@@ -72,11 +65,13 @@ export default function ArchitectureView() {
       <div className="section-header">
         <div>
           <h2 className="section-title">Microservices Architecture & Live Health</h2>
-          <p className="section-sub">Distributed system overview with real-time ping connectivity testing</p>
+          <p className="section-sub">
+            Targeting API Gateway: <code className="code-pill">{API_BASE}</code>
+          </p>
         </div>
         <button className="btn btn-primary" onClick={pingAll} disabled={isPinging}>
           <Activity size={15} className={isPinging ? 'spin-animate' : ''} />
-          {isPinging ? 'Pinging Services...' : 'Ping All Services'}
+          {isPinging ? 'Pinging Cloud Services...' : 'Ping All Services'}
         </button>
       </div>
 
@@ -87,7 +82,7 @@ export default function ArchitectureView() {
             <div className="arch-icon gateway-color"><Network size={20} /></div>
             <div>
               <h4>API Gateway</h4>
-              <span className="port-tag">Port 8080</span>
+              <span className="port-tag">Public Endpoint</span>
             </div>
             <span className={`arch-status-pill ${statuses.gateway}`}>
               {statuses.gateway === 'online' ? 'Online' : statuses.gateway === 'checking' ? 'Checking...' : 'Standby'}
@@ -109,19 +104,15 @@ export default function ArchitectureView() {
             <div className="arch-icon eureka-color"><Radio size={20} /></div>
             <div>
               <h4>Eureka Registry</h4>
-              <span className="port-tag">Port 8761</span>
+              <span className="port-tag">Discovery Server</span>
             </div>
-            <span className={`arch-status-pill ${statuses.eureka}`}>
-              {statuses.eureka === 'online' ? 'Online' : statuses.eureka === 'checking' ? 'Checking...' : 'Standby'}
-            </span>
+            <span className="arch-status-pill online">Online</span>
           </div>
           <p className="arch-desc">
             Netflix Eureka service discovery server. Microservices dynamically register their network location.
           </p>
           <div className="endpoint-list">
-            <a href="http://localhost:8761" target="_blank" rel="noreferrer" className="link-btn">
-              Open Eureka Dashboard <ExternalLink size={12} />
-            </a>
+            <code>eureka-server</code>
           </div>
         </div>
 
@@ -131,7 +122,7 @@ export default function ArchitectureView() {
             <div className="arch-icon user-color"><Users size={20} /></div>
             <div>
               <h4>User Service</h4>
-              <span className="port-tag">Port 8081</span>
+              <span className="port-tag">Port 8081 / Cloud</span>
             </div>
             <span className={`arch-status-pill ${statuses.user}`}>
               {statuses.user === 'online' ? 'Online' : statuses.user === 'checking' ? 'Checking...' : 'Standby'}
@@ -143,7 +134,6 @@ export default function ArchitectureView() {
           <div className="endpoint-list">
             <code>GET /users</code>
             <code>POST /users/register</code>
-            <code>POST /users/login</code>
           </div>
         </div>
 
@@ -153,7 +143,7 @@ export default function ArchitectureView() {
             <div className="arch-icon product-color"><Boxes size={20} /></div>
             <div>
               <h4>Product Service</h4>
-              <span className="port-tag">Port 8082</span>
+              <span className="port-tag">Port 8082 / Cloud</span>
             </div>
             <span className={`arch-status-pill ${statuses.product}`}>
               {statuses.product === 'online' ? 'Online' : statuses.product === 'checking' ? 'Checking...' : 'Standby'}
@@ -165,7 +155,6 @@ export default function ArchitectureView() {
           <div className="endpoint-list">
             <code>GET /products</code>
             <code>POST /products</code>
-            <code>POST /reduce-stock</code>
           </div>
         </div>
 
@@ -175,7 +164,7 @@ export default function ArchitectureView() {
             <div className="arch-icon order-color"><Truck size={20} /></div>
             <div>
               <h4>Order Service</h4>
-              <span className="port-tag">Port 8083</span>
+              <span className="port-tag">Port 8083 / Cloud</span>
             </div>
             <span className={`arch-status-pill ${statuses.order}`}>
               {statuses.order === 'online' ? 'Online' : statuses.order === 'checking' ? 'Checking...' : 'Standby'}
@@ -187,7 +176,6 @@ export default function ArchitectureView() {
           <div className="endpoint-list">
             <code>POST /orders</code>
             <code>GET /orders/user/:id</code>
-            <code>PUT /orders/:id/status</code>
           </div>
         </div>
 
@@ -197,17 +185,15 @@ export default function ArchitectureView() {
             <div className="arch-icon db-color"><Database size={20} /></div>
             <div>
               <h4>PostgreSQL Database</h4>
-              <span className="port-tag">Port 5432</span>
+              <span className="port-tag">Managed DB</span>
             </div>
             <span className="arch-status-pill online">Active</span>
           </div>
           <p className="arch-desc">
-            PostgreSQL 18 instance managing isolated relational schemas: <code>quickmart_user_db</code>, <code>quickmart_product_db</code>, <code>quickmart_order_db</code>.
+            Render PostgreSQL instance managing tables: <code>users</code>, <code>products</code>, <code>orders</code>, and <code>order_items</code>.
           </p>
           <div className="endpoint-list">
-            <code>quickmart_user_db</code>
-            <code>quickmart_product_db</code>
-            <code>quickmart_order_db</code>
+            <code>quickmart_db</code>
           </div>
         </div>
       </div>

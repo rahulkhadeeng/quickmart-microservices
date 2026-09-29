@@ -89,7 +89,7 @@ export default function Navbar({
           title="Click to view distributed architecture & live ping tests"
         >
           <span className={`pulse-dot ${isGatewayOnline ? 'online' : 'offline'}`}></span>
-          <span>{isGatewayOnline ? 'Gateway :8080 (Online)' : 'Gateway :8080 (Standby)'}</span>
+          <span>{isGatewayOnline ? 'Gateway (Online)' : 'Gateway (Standby)'}</span>
         </div>
 
         {/* Right Actions */}
