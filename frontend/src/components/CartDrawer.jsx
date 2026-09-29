@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart, X, Lock, Loader2 } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function CartDrawer({ 
   isOpen, 
@@ -37,8 +38,8 @@ export default function CartDrawer({
       <div className="cart-drawer">
         <div className="cart-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800 }}>
-            <ShoppingCart size={20} color="var(--primary)" />
-            <span>Shopping Cart</span>
+            <BrandLogo width={22} height={16} fill="var(--primary)" />
+            <span>QuickMart Cart</span>
           </div>
           <button className="close-drawer-btn" onClick={onClose}>
             <X size={20} />

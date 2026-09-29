@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, AlertCircle, Loader2, UserCheck } from 'lucide-react';
+import { X, AlertCircle, Loader2 } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function UserModal({ isOpen, onClose, onRegister }) {
   const [formData, setFormData] = useState({
@@ -41,8 +42,8 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
     <div className="modal-overlay">
       <div className="modal-card" style={{ maxWidth: '480px' }}>
         <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserCheck size={20} color="var(--primary)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <BrandLogo width={24} height={18} fill="#6366F1" />
             <h3 style={{ margin: 0 }}>Register New User</h3>
           </div>
           <button className="modal-close" onClick={onClose}><X size={20} /></button>

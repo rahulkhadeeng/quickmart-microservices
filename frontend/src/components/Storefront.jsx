@@ -8,6 +8,8 @@ import {
   PackageOpen 
 } from 'lucide-react';
 
+import BrandLogo from './BrandLogo';
+
 export default function Storefront({ products, onAddToCart }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,7 +52,7 @@ export default function Storefront({ products, onAddToCart }) {
       <div className="hero-banner">
         <div className="hero-content">
           <span className="hero-tag">
-            <ShieldCheck size={14} /> Cloud Native Architecture
+            <BrandLogo width={18} height={13} fill="#A855F7" /> Cloud Native Architecture
           </span>
           <h1 className="hero-title">Discover High-Performance Tech & Essentials</h1>
           <p className="hero-desc">

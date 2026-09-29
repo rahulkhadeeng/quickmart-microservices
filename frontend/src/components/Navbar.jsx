@@ -10,6 +10,8 @@ import {
   UserPlus 
 } from 'lucide-react';
 
+import BrandLogo from './BrandLogo';
+
 export default function Navbar({ 
   activeTab, 
   setActiveTab, 
@@ -45,8 +47,8 @@ export default function Navbar({
       <div className="nav-container">
         {/* Brand */}
         <div className="brand" onClick={() => setActiveTab('storefront')}>
-          <div className="logo-icon">
-            <Zap size={22} />
+          <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <BrandLogo width={26} height={20} fill="#FFFFFF" />
           </div>
           <div className="brand-text">
             <span className="brand-title">QuickMart</span>
