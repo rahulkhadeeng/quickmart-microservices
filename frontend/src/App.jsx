@@ -9,6 +9,7 @@ import ArchitectureView from './components/ArchitectureView';
 import ProductModal from './components/ProductModal';
 import UserModal from './components/UserModal';
 import Footer from './components/Footer';
+import ServerWarmupBanner from './components/ServerWarmupBanner';
 import { api, SEED_PRODUCTS, SEED_USERS } from './services/api';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
@@ -265,6 +266,9 @@ export default function App() {
 
   return (
     <>
+      {/* Free-tier Demo Warmup Notification Card */}
+      <ServerWarmupBanner isGatewayOnline={isGatewayOnline} />
+
       {/* Toast Notifications */}
       <div className="toast-container">
         {toasts.map(t => (
