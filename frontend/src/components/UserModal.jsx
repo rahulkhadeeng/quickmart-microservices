@@ -69,38 +69,38 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full Name *</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              required 
+            <input
+              type="text"
+              className="form-control"
+              required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Rahul Sharma"
+              placeholder="e.g. Rahul Khade"
               disabled={isSubmitting}
             />
           </div>
           <div className="form-group">
             <label>Email Address *</label>
-            <input 
-              type="email" 
-              className="form-control" 
-              required 
+            <input
+              type="email"
+              className="form-control"
+              required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="rahul@example.com"
               disabled={isSubmitting}
             />
             <small style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Must be unique across user-service PostgreSQL database.
+              Must be unique.
             </small>
           </div>
           <div className="form-row">
             <div className="form-group">
               <label>Password *</label>
-              <input 
-                type="password" 
-                className="form-control" 
-                required 
+              <input
+                type="password"
+                className="form-control"
+                required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={isSubmitting}
@@ -108,7 +108,7 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
             </div>
             <div className="form-group">
               <label>Role</label>
-              <select 
+              <select
                 className="form-control"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
@@ -121,9 +121,9 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
           </div>
           <div className="form-group">
             <label>Phone</label>
-            <input 
-              type="text" 
-              className="form-control" 
+            <input
+              type="text"
+              className="form-control"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+91 9876543210"
@@ -132,9 +132,9 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
           </div>
           <div className="form-group">
             <label>Shipping Address</label>
-            <input 
-              type="text" 
-              className="form-control" 
+            <input
+              type="text"
+              className="form-control"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Flat 402, Sunshine Heights, Mumbai"
@@ -149,10 +149,10 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
-                  Saving to PostgreSQL...
+                  Saving...
                 </>
               ) : (
-                'Register in PostgreSQL'
+                'Register'
               )}
             </button>
           </div>
