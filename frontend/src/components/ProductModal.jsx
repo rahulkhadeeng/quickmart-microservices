@@ -50,8 +50,8 @@ export default function ProductModal({ isOpen, onClose, onSave, editingProduct }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="modal-card">
         <div className="modal-header">
           <h3>{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
           <button className="modal-close" onClick={onClose}><X size={20} /></button>

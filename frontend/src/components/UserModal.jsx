@@ -38,8 +38,8 @@ export default function UserModal({ isOpen, onClose, onRegister }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '480px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserCheck size={20} color="var(--primary)" />

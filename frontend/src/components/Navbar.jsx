@@ -99,10 +99,10 @@ export default function Navbar({
             className="btn btn-secondary" 
             style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
             onClick={onOpenNewUserModal}
-            title="Register a new customer account in PostgreSQL"
+            title="Register a new user account in PostgreSQL"
           >
             <UserPlus size={14} color="var(--primary)" />
-            <span>Register</span>
+            <span>Register New User</span>
           </button>
 
           {/* User Switcher Dropdown */}
@@ -137,7 +137,7 @@ export default function Navbar({
                   className="dropdown-action-btn"
                   onClick={() => { setDropdownOpen(false); onOpenNewUserModal(); }}
                 >
-                  <UserPlus size={15} /> + Register New Customer
+                  <UserPlus size={15} /> + Register New User
                 </button>
               </div>
             )}

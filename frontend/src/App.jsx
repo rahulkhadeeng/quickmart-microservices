@@ -38,12 +38,20 @@ export default function App() {
     }, 3800);
   };
 
-  // Load Data on Startup
+  // Load Data on Startup & Keep microservices warm to prevent cold starts
   useEffect(() => {
+    api.warmupServices();
     loadProducts();
     loadUsers();
     checkHealth();
     loadStoredCart();
+
+    // Periodic keep-alive ping every 3.5 minutes to prevent Render free-tier sleep
+    const keepAliveTimer = setInterval(() => {
+      api.warmupServices();
+    }, 210000);
+
+    return () => clearInterval(keepAliveTimer);
   }, []);
 
   // Sync user orders when user changes or tab changes

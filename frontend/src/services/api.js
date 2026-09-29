@@ -98,15 +98,30 @@ export const SEED_USERS = [
 ];
 
 export const api = {
-  // Products API
+  // Concurrent Warmup for all 5 microservices to eliminate cold starts
+  warmupServices() {
+    const endpoints = [
+      `${API_BASE}/health`,
+      `${USER_SERVICE_DIRECT}/users`,
+      `${PRODUCT_SERVICE_DIRECT}/products`,
+      `${ORDER_SERVICE_DIRECT}/orders`,
+      'https://quickmart-eureka.onrender.com/'
+    ];
+    endpoints.forEach(url => {
+      fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+    });
+  },
+
+  // Products API (Parallel Race for ultra-fast response)
   async getProducts() {
     try {
-      const res = await fetch(`${API_BASE}/products`);
-      if (res.ok) {
-        const data = await res.json();
-        return (data && data.length > 0) ? data : SEED_PRODUCTS;
-      }
+      const fetchGw = fetch(`${API_BASE}/products`).then(r => r.ok ? r.json() : Promise.reject());
+      const fetchDirect = fetch(`${PRODUCT_SERVICE_DIRECT}/products`).then(r => r.ok ? r.json() : Promise.reject());
+      
+      const data = await Promise.any([fetchGw, fetchDirect]);
+      if (data && data.length > 0) return data;
     } catch (e) {}
+
     return SEED_PRODUCTS;
   },
 
@@ -115,8 +130,13 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(product)
-    });
-    if (!res.ok) throw new Error('Failed to create product in PostgreSQL');
+    }).catch(() => fetch(`${PRODUCT_SERVICE_DIRECT}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product)
+    }));
+
+    if (!res || !res.ok) throw new Error('Failed to create product in PostgreSQL');
     return await res.json();
   },
 
@@ -125,44 +145,39 @@ export const api = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(product)
-    });
-    if (!res.ok) throw new Error('Failed to update product');
+    }).catch(() => fetch(`${PRODUCT_SERVICE_DIRECT}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product)
+    }));
+
+    if (!res || !res.ok) throw new Error('Failed to update product');
     return await res.json();
   },
 
   async deleteProduct(id) {
-    const res = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete product');
+    const res = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' })
+      .catch(() => fetch(`${PRODUCT_SERVICE_DIRECT}/products/${id}`, { method: 'DELETE' }));
+    if (!res || !res.ok) throw new Error('Failed to delete product');
     return true;
   },
 
-  // Users API
+  // Users API (Fast Parallel Race between Gateway and User Service)
   async getUsers() {
     try {
-      const res = await fetch(`${API_BASE}/users`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0) return data;
-      }
-    } catch (e) {}
-
-    try {
-      const res2 = await fetch(`${USER_SERVICE_DIRECT}/users`);
-      if (res2.ok) {
-        const data = await res2.json();
-        if (data && data.length > 0) return data;
-      }
+      const fetchGw = fetch(`${API_BASE}/users`).then(r => r.ok ? r.json() : Promise.reject());
+      const fetchDirect = fetch(`${USER_SERVICE_DIRECT}/users`).then(r => r.ok ? r.json() : Promise.reject());
+      
+      const data = await Promise.any([fetchGw, fetchDirect]);
+      if (data && data.length > 0) return data;
     } catch (e) {}
 
     return SEED_USERS;
   },
 
   async registerUser(user) {
-    let lastError = null;
-
-    // 1. Try through API Gateway
-    try {
-      const res = await fetch(`${API_BASE}/users/register`, {
+    const sendReq = async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user)
@@ -175,46 +190,49 @@ export const api = {
         throw new Error(errJson.error);
       }
       if (res.status === 400) {
-        throw new Error('User already exists or invalid data provided');
+        throw new Error('User with this email already exists');
       }
-    } catch (err) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch')) {
-        throw err;
-      }
-      lastError = err;
-    }
+      throw new Error(`HTTP ${res.status}`);
+    };
 
-    // 2. Direct fallback to user-service
+    // Race both endpoints concurrently so the fastest warm instance responds immediately
     try {
-      const res2 = await fetch(`${USER_SERVICE_DIRECT}/users/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user)
-      });
-      if (res2.ok) {
-        return await res2.json();
+      return await Promise.any([
+        sendReq(API_BASE),
+        sendReq(USER_SERVICE_DIRECT)
+      ]);
+    } catch (aggregateErr) {
+      // If all failed, extract specific validation error if present
+      if (aggregateErr.errors) {
+        for (const err of aggregateErr.errors) {
+          if (err.message && (err.message.includes('already exists') || err.message.includes('Validation'))) {
+            throw err;
+          }
+        }
       }
-      const errJson = await res2.json().catch(() => null);
-      if (errJson && errJson.error) {
-        throw new Error(errJson.error);
-      }
-      throw new Error(`Registration failed (HTTP ${res2.status})`);
-    } catch (err2) {
-      throw err2.message ? err2 : lastError || new Error('Could not reach User Service');
+      throw new Error('Could not connect to User Service. Services may still be spinning up.');
     }
   },
 
   // Orders API
   async getOrdersByUser(userId) {
-    const res = await fetch(`${API_BASE}/orders/user/${userId}`);
-    if (!res.ok) throw new Error('Failed to fetch orders');
-    return await res.json();
+    try {
+      const fetchGw = fetch(`${API_BASE}/orders/user/${userId}`).then(r => r.ok ? r.json() : Promise.reject());
+      const fetchDirect = fetch(`${ORDER_SERVICE_DIRECT}/orders/user/${userId}`).then(r => r.ok ? r.json() : Promise.reject());
+      return await Promise.any([fetchGw, fetchDirect]);
+    } catch (e) {
+      throw new Error('Failed to fetch orders');
+    }
   },
 
   async getAllOrders() {
-    const res = await fetch(`${API_BASE}/orders`);
-    if (!res.ok) throw new Error('Failed to fetch all orders');
-    return await res.json();
+    try {
+      const fetchGw = fetch(`${API_BASE}/orders`).then(r => r.ok ? r.json() : Promise.reject());
+      const fetchDirect = fetch(`${ORDER_SERVICE_DIRECT}/orders`).then(r => r.ok ? r.json() : Promise.reject());
+      return await Promise.any([fetchGw, fetchDirect]);
+    } catch (e) {
+      throw new Error('Failed to fetch all orders');
+    }
   },
 
   async createOrder(orderPayload) {
@@ -222,8 +240,13 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderPayload)
-    });
-    if (!res.ok) throw new Error('Failed to place order');
+    }).catch(() => fetch(`${ORDER_SERVICE_DIRECT}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderPayload)
+    }));
+
+    if (!res || !res.ok) throw new Error('Failed to place order');
     return await res.json();
   },
 
@@ -232,8 +255,13 @@ export const api = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
-    });
-    if (!res.ok) throw new Error('Failed to update status');
+    }).catch(() => fetch(`${ORDER_SERVICE_DIRECT}/orders/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    }));
+
+    if (!res || !res.ok) throw new Error('Failed to update status');
     return await res.json();
   },
 
