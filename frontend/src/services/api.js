@@ -198,9 +198,13 @@ export const api = {
   // Health check
   async checkGateway() {
     try {
-      const res = await fetch(`${API_BASE}/products`);
-      return res.ok;
-    } catch (e) {
+      const res = await fetch(`${API_BASE}/health`, { method: 'GET' });
+      if (res.ok) return true;
+    } catch (e) {}
+    try {
+      const res2 = await fetch(`${API_BASE}/products`, { method: 'GET' });
+      return res2.ok;
+    } catch (err) {
       return false;
     }
   }

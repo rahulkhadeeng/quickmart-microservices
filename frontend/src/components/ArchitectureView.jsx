@@ -6,8 +6,7 @@ import {
   Boxes, 
   Truck, 
   Database, 
-  Activity, 
-  ExternalLink 
+  Activity 
 } from 'lucide-react';
 import { API_BASE } from '../services/api';
 
@@ -26,27 +25,39 @@ export default function ArchitectureView() {
     setIsPinging(true);
     const newStatus = { ...statuses };
 
-    // 1. Gateway & Product
+    // 1. Gateway Health
     try {
-      const res = await fetch(`${API_BASE}/products`);
+      const res = await fetch(`${API_BASE}/health`, { method: 'GET' });
       newStatus.gateway = res.ok ? 'online' : 'offline';
-      newStatus.product = res.ok ? 'online' : 'offline';
     } catch {
-      newStatus.gateway = 'offline';
+      try {
+        const resRoot = await fetch(`${API_BASE}/`, { method: 'GET' });
+        newStatus.gateway = resRoot.ok ? 'online' : 'offline';
+      } catch {
+        newStatus.gateway = 'offline';
+      }
+    }
+
+    // 2. Product Service via Gateway
+    try {
+      const res = await fetch(`${API_BASE}/products`, { method: 'GET' });
+      newStatus.product = res.ok ? 'online' : 'offline';
+      if (res.ok) newStatus.gateway = 'online';
+    } catch {
       newStatus.product = 'offline';
     }
 
-    // 2. User Service
+    // 3. User Service via Gateway
     try {
-      const res = await fetch(`${API_BASE}/users`);
+      const res = await fetch(`${API_BASE}/users`, { method: 'GET' });
       newStatus.user = res.ok ? 'online' : 'offline';
     } catch {
       newStatus.user = 'offline';
     }
 
-    // 3. Order Service
+    // 4. Order Service via Gateway
     try {
-      const res = await fetch(`${API_BASE}/orders`);
+      const res = await fetch(`${API_BASE}/orders`, { method: 'GET' });
       newStatus.order = res.ok ? 'online' : 'offline';
     } catch {
       newStatus.order = 'offline';
@@ -66,7 +77,7 @@ export default function ArchitectureView() {
         <div>
           <h2 className="section-title">Microservices Architecture & Live Health</h2>
           <p className="section-sub">
-            Targeting API Gateway: <code className="code-pill">{API_BASE}</code>
+            Connected API Gateway: <code className="code-pill">{API_BASE}</code>
           </p>
         </div>
         <button className="btn btn-primary" onClick={pingAll} disabled={isPinging}>
@@ -82,7 +93,7 @@ export default function ArchitectureView() {
             <div className="arch-icon gateway-color"><Network size={20} /></div>
             <div>
               <h4>API Gateway</h4>
-              <span className="port-tag">Public Endpoint</span>
+              <span className="port-tag">Reverse Proxy</span>
             </div>
             <span className={`arch-status-pill ${statuses.gateway}`}>
               {statuses.gateway === 'online' ? 'Online' : statuses.gateway === 'checking' ? 'Checking...' : 'Standby'}
@@ -112,7 +123,7 @@ export default function ArchitectureView() {
             Netflix Eureka service discovery server. Microservices dynamically register their network location.
           </p>
           <div className="endpoint-list">
-            <code>eureka-server</code>
+            <code>quickmart-eureka</code>
           </div>
         </div>
 
