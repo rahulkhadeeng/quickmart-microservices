@@ -227,13 +227,18 @@ export default function App() {
   const handleRegisterUser = async (userData) => {
     try {
       const created = await api.registerUser(userData);
-      showToast(`User ${created.name} successfully saved to PostgreSQL database!`, 'success');
+      showToast(`🎉 User ${created.name} successfully registered in PostgreSQL!`, 'success');
       await loadUsers();
+      setCurrentUser(created);
+      try {
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      } catch {}
+      return created;
     } catch (err) {
       console.error('Registration failed:', err);
-      showToast(`Failed to save to PostgreSQL: ${err.message}. Please check that user-service is running on port 8081.`, 'error');
+      showToast(`Registration failed: ${err.message}`, 'error');
+      throw err;
     }
-    setIsUserModalOpen(false);
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {

@@ -3,7 +3,10 @@
  * All calls route through API Gateway
  */
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://quickmart-gateway.onrender.com';
+export const USER_SERVICE_DIRECT = 'https://quickmart-user-service.onrender.com';
+export const PRODUCT_SERVICE_DIRECT = 'https://quickmart-product-service.onrender.com';
+export const ORDER_SERVICE_DIRECT = 'https://quickmart-order-service.onrender.com';
 
 export const SEED_PRODUCTS = [
   {
@@ -142,24 +145,63 @@ export const api = {
         if (data && data.length > 0) return data;
       }
     } catch (e) {}
+
+    try {
+      const res2 = await fetch(`${USER_SERVICE_DIRECT}/users`);
+      if (res2.ok) {
+        const data = await res2.json();
+        if (data && data.length > 0) return data;
+      }
+    } catch (e) {}
+
     return SEED_USERS;
   },
 
   async registerUser(user) {
-    const res = await fetch(`${API_BASE}/users/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
-    });
-    if (!res.ok) {
-      let errMsg = 'Failed to register user in PostgreSQL';
-      try {
-        const errJson = await res.json();
-        if (errJson.error) errMsg = errJson.error;
-      } catch (e) {}
-      throw new Error(errMsg);
+    let lastError = null;
+
+    // 1. Try through API Gateway
+    try {
+      const res = await fetch(`${API_BASE}/users/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      const errJson = await res.json().catch(() => null);
+      if (errJson && errJson.error) {
+        throw new Error(errJson.error);
+      }
+      if (res.status === 400) {
+        throw new Error('User already exists or invalid data provided');
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch')) {
+        throw err;
+      }
+      lastError = err;
     }
-    return await res.json();
+
+    // 2. Direct fallback to user-service
+    try {
+      const res2 = await fetch(`${USER_SERVICE_DIRECT}/users/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+      });
+      if (res2.ok) {
+        return await res2.json();
+      }
+      const errJson = await res2.json().catch(() => null);
+      if (errJson && errJson.error) {
+        throw new Error(errJson.error);
+      }
+      throw new Error(`Registration failed (HTTP ${res2.status})`);
+    } catch (err2) {
+      throw err2.message ? err2 : lastError || new Error('Could not reach User Service');
+    }
   },
 
   // Orders API
