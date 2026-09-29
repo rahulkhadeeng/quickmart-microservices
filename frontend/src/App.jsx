@@ -8,6 +8,7 @@ import AdminStudio from './components/AdminStudio';
 import ArchitectureView from './components/ArchitectureView';
 import ProductModal from './components/ProductModal';
 import UserModal from './components/UserModal';
+import Footer from './components/Footer';
 import { api, SEED_PRODUCTS, SEED_USERS } from './services/api';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
@@ -341,6 +342,9 @@ export default function App() {
           <ArchitectureView />
         )}
       </main>
+
+      {/* Keylo-Style Platform Footer */}
+      <Footer onNavigate={setActiveTab} showToast={showToast} />
 
       {/* Cart Drawer */}
       <CartDrawer
