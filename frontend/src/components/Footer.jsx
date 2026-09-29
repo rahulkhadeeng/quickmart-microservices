@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  Send, 
-  Heart, 
-  Server, 
-  Database, 
-  Layers, 
-  CheckCircle2, 
-  ExternalLink 
+import {
+  Send,
+  Heart,
+  Server,
+  Database,
+  Layers,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 
@@ -29,10 +29,10 @@ export default function Footer({ onNavigate, showToast }) {
     <footer className="keylo-footer">
       <div className="footer-top-accent"></div>
       <div className="footer-container">
-        
+
         {/* Main Footer Content Grid */}
         <div className="footer-grid">
-          
+
           {/* Col 1: Brand & Identity */}
           <div className="footer-brand-col">
             <div className="footer-brand" onClick={() => onNavigate && onNavigate('storefront')}>
@@ -44,16 +44,16 @@ export default function Footer({ onNavigate, showToast }) {
                 <span className="brand-sub" style={{ fontSize: '0.7rem' }}>Microservices Platform</span>
               </div>
             </div>
-            
+
             <p className="footer-tagline">
               Modern distributed cloud-native e-commerce powered by Spring Boot microservices, Netflix Eureka service discovery, Spring Cloud Gateway Web MVC, and PostgreSQL database.
             </p>
 
             <div className="footer-social-links">
-              <a 
-                href="https://github.com/rahulkhadeeng/quickmart-microservices" 
-                target="_blank" 
-                rel="noreferrer" 
+              <a
+                href="https://github.com/rahulkhadeeng/quickmart-microservices"
+                target="_blank"
+                rel="noreferrer"
                 className="footer-social-icon"
                 title="GitHub Repository"
               >
@@ -61,10 +61,10 @@ export default function Footer({ onNavigate, showToast }) {
                   <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
                 </svg>
               </a>
-              <a 
-                href="https://linkedin.com" 
-                target="_blank" 
-                rel="noreferrer" 
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noreferrer"
                 className="footer-social-icon"
                 title="LinkedIn"
               >
@@ -74,10 +74,10 @@ export default function Footer({ onNavigate, showToast }) {
                   <circle cx="4" cy="4" r="2"></circle>
                 </svg>
               </a>
-              <a 
-                href="https://twitter.com" 
-                target="_blank" 
-                rel="noreferrer" 
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noreferrer"
                 className="footer-social-icon"
                 title="Twitter / X"
               >
@@ -86,8 +86,8 @@ export default function Footer({ onNavigate, showToast }) {
                   <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
                 </svg>
               </a>
-              <a 
-                href="mailto:contact@quickmart.com" 
+              <a
+                href="mailto:contact@quickmart.com"
                 className="footer-social-icon"
                 title="Email Support"
               >
@@ -180,9 +180,9 @@ export default function Footer({ onNavigate, showToast }) {
 
             <form onSubmit={handleSubscribe} className="footer-subscribe-form">
               <div className="newsletter-input-group">
-                <input 
-                  type="email" 
-                  placeholder="Enter your work email..." 
+                <input
+                  type="email"
+                  placeholder="Enter your work email..."
                   value={newsletterEmail}
                   onChange={(e) => setNewsletterEmail(e.target.value)}
                   className="newsletter-input"
@@ -192,7 +192,7 @@ export default function Footer({ onNavigate, showToast }) {
                 </button>
               </div>
             </form>
-            
+
             {isSubscribed && (
               <div className="newsletter-success">
                 <CheckCircle2 size={14} color="#10B981" />
@@ -213,7 +213,7 @@ export default function Footer({ onNavigate, showToast }) {
         {/* Footer Bottom Bar */}
         <div className="footer-bottom-bar">
           <div className="footer-copyright">
-            © 2026 <strong>QuickMart Microservices Platform</strong>. All rights reserved.
+            © 2026 <strong>Rahul Khade</strong>. All rights reserved.
           </div>
 
           <div className="footer-legal-links">
