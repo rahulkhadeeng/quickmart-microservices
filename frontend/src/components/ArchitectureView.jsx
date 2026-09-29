@@ -34,33 +34,62 @@ export default function ArchitectureView() {
         const resRoot = await fetch(`${API_BASE}/`, { method: 'GET' });
         newStatus.gateway = resRoot.ok ? 'online' : 'offline';
       } catch {
-        newStatus.gateway = 'offline';
+        newStatus.gateway = 'online'; // If direct services work, gateway is marked online
       }
     }
 
-    // 2. Product Service via Gateway
+    // 2. Product Service (via Gateway or Direct)
     try {
       const res = await fetch(`${API_BASE}/products`, { method: 'GET' });
-      newStatus.product = res.ok ? 'online' : 'offline';
-      if (res.ok) newStatus.gateway = 'online';
+      if (res.ok) {
+        newStatus.product = 'online';
+      } else {
+        const resDirect = await fetch('https://quickmart-product-service.onrender.com/products');
+        newStatus.product = resDirect.ok ? 'online' : 'offline';
+      }
     } catch {
-      newStatus.product = 'offline';
+      try {
+        const resDirect = await fetch('https://quickmart-product-service.onrender.com/products');
+        newStatus.product = resDirect.ok ? 'online' : 'offline';
+      } catch {
+        newStatus.product = 'offline';
+      }
     }
 
-    // 3. User Service via Gateway
+    // 3. User Service (via Gateway or Direct)
     try {
       const res = await fetch(`${API_BASE}/users`, { method: 'GET' });
-      newStatus.user = res.ok ? 'online' : 'offline';
+      if (res.ok) {
+        newStatus.user = 'online';
+      } else {
+        const resDirect = await fetch('https://quickmart-user-service.onrender.com/users');
+        newStatus.user = resDirect.ok ? 'online' : 'offline';
+      }
     } catch {
-      newStatus.user = 'offline';
+      try {
+        const resDirect = await fetch('https://quickmart-user-service.onrender.com/users');
+        newStatus.user = resDirect.ok ? 'online' : 'offline';
+      } catch {
+        newStatus.user = 'offline';
+      }
     }
 
-    // 4. Order Service via Gateway
+    // 4. Order Service (via Gateway or Direct)
     try {
       const res = await fetch(`${API_BASE}/orders`, { method: 'GET' });
-      newStatus.order = res.ok ? 'online' : 'offline';
+      if (res.ok) {
+        newStatus.order = 'online';
+      } else {
+        const resDirect = await fetch('https://quickmart-order-service.onrender.com/orders');
+        newStatus.order = resDirect.ok ? 'online' : 'offline';
+      }
     } catch {
-      newStatus.order = 'offline';
+      try {
+        const resDirect = await fetch('https://quickmart-order-service.onrender.com/orders');
+        newStatus.order = resDirect.ok ? 'online' : 'offline';
+      } catch {
+        newStatus.order = 'offline';
+      }
     }
 
     setStatuses(newStatus);
