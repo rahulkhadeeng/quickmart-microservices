@@ -20,7 +20,8 @@ export default function Navbar({
   onSelectUser, 
   onOpenNewUserModal,
   isGatewayOnline,
-  orderCount 
+  orderCount,
+  onDeniedAdmin
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -70,9 +71,19 @@ export default function Navbar({
           </button>
           <button 
             className={`nav-tab ${activeTab === 'admin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('admin')}
+            onClick={() => {
+              if (currentUser?.role !== 'ROLE_ADMIN') {
+                if (onDeniedAdmin) onDeniedAdmin();
+              }
+              setActiveTab('admin');
+            }}
           >
             <PieChart size={17} /> Admin Studio
+            {currentUser?.role !== 'ROLE_ADMIN' && (
+              <span className="tab-badge" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#F87171', fontSize: '0.65rem' }}>
+                Admin
+              </span>
+            )}
           </button>
           <button 
             className={`nav-tab ${activeTab === 'arch' ? 'active' : ''}`}

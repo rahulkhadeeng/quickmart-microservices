@@ -236,18 +236,34 @@ export const api = {
   },
 
   async createOrder(orderPayload) {
-    const res = await fetch(`${API_BASE}/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload)
-    }).catch(() => fetch(`${ORDER_SERVICE_DIRECT}/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload)
-    }));
+    const sendReq = async (baseUrl) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      try {
+        const res = await fetch(`${baseUrl}/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderPayload),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) return await res.json();
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || `HTTP ${res.status}`);
+      } catch (e) {
+        clearTimeout(timeoutId);
+        throw e;
+      }
+    };
 
-    if (!res || !res.ok) throw new Error('Failed to place order');
-    return await res.json();
+    try {
+      return await Promise.any([
+        sendReq(API_BASE),
+        sendReq(ORDER_SERVICE_DIRECT)
+      ]);
+    } catch (e) {
+      throw new Error('Failed to place order via Order Service');
+    }
   },
 
   async updateOrderStatus(id, status) {

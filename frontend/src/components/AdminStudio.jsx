@@ -7,10 +7,14 @@ import {
   RotateCw, 
   Pen, 
   Trash2, 
-  Star 
+  Star,
+  Lock,
+  ShieldAlert,
+  UserCheck
 } from 'lucide-react';
 
 export default function AdminStudio({ 
+  currentUser,
   products, 
   users, 
   adminOrders, 
@@ -19,9 +23,57 @@ export default function AdminStudio({
   onDeleteProduct, 
   onOpenRegisterUser, 
   onRefreshOrders,
-  onUpdateOrderStatus 
+  onUpdateOrderStatus,
+  onSwitchToAdmin 
 }) {
   const [subTab, setSubTab] = useState('products');
+  const isAdmin = currentUser?.role === 'ROLE_ADMIN';
+
+  if (!isAdmin) {
+    return (
+      <div style={{ animation: 'fadeIn 0.3s ease-in-out', display: 'flex', justifyContent: 'center', padding: '3rem 1rem' }}>
+        <div style={{
+          background: 'var(--card-bg, #1E293B)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '16px',
+          padding: '2.5rem 2rem',
+          maxWidth: '520px',
+          textAlign: 'center',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+        }}>
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.25rem'
+          }}>
+            <Lock size={32} color="#EF4444" />
+          </div>
+
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.6rem', color: '#F87171' }}>
+            Admin Studio Restricted
+          </h2>
+          <p style={{ color: 'var(--text-muted, #94A3B8)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+            Only accounts with <strong>ROLE_ADMIN</strong> privileges can inspect PostgreSQL microservice tables, edit products, or manage global orders.
+            <br /><br />
+            You are currently active as <strong>{currentUser?.name || 'Customer'}</strong> ({currentUser?.role || 'ROLE_CUSTOMER'}).
+          </p>
+
+          <button 
+            className="btn btn-primary" 
+            style={{ padding: '10px 20px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            onClick={onSwitchToAdmin}
+          >
+            <UserCheck size={18} /> Switch to Admin QuickMart Account
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>

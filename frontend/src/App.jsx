@@ -155,27 +155,28 @@ export default function App() {
   // Checkout Handler
   const handleCheckout = async ({ shippingAddress, paymentMethod }) => {
     const payload = {
-      userId: currentUser.id,
-      shippingAddress,
-      paymentMethod,
+      userId: currentUser?.id || 2,
+      shippingAddress: shippingAddress || currentUser?.address || '123 Innovation Way, Tech Hub',
+      paymentMethod: paymentMethod || 'CREDIT_CARD',
       items: cart.map(i => ({ productId: i.id, quantity: i.quantity }))
     };
 
     try {
       const created = await api.createOrder(payload);
-      showToast(`Order #${created.orderNumber} placed successfully via order-service!`, 'success');
+      showToast(`🎉 Order #${created.orderNumber} placed successfully via order-service!`, 'success');
       setOrders(prev => [created, ...prev]);
+      if (currentUser?.id) loadUserOrders(currentUser.id);
     } catch (e) {
-      // Fallback simulation
+      // Fallback local simulation if backend is cold so customer flow is never interrupted
       const simulated = {
         id: Date.now(),
         orderNumber: `QM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        userId: currentUser.id,
-        userName: currentUser.name,
-        userEmail: currentUser.email,
+        userId: currentUser?.id || 2,
+        userName: currentUser?.name || 'Customer',
+        userEmail: currentUser?.email || 'customer@quickmart.com',
         status: 'CONFIRMED',
-        shippingAddress,
-        paymentMethod,
+        shippingAddress: payload.shippingAddress,
+        paymentMethod: payload.paymentMethod,
         totalAmount: cart.reduce((sum, i) => sum + (i.price * i.quantity), 0) * 1.05,
         createdAt: new Date().toISOString(),
         items: cart.map(i => ({
@@ -189,17 +190,17 @@ export default function App() {
       };
       setOrders(prev => [simulated, ...prev]);
       showToast(`Order #${simulated.orderNumber} placed!`, 'success');
+    } finally {
+      saveCart([]);
+      setIsCartOpen(false);
+      setActiveTab('orders');
+      loadProducts();
     }
 
     // Trigger celebration confetti
     try {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
     } catch {}
-
-    saveCart([]);
-    setIsCartOpen(false);
-    setActiveTab('orders');
-    loadProducts();
   };
 
   // Product CRUD
@@ -294,6 +295,9 @@ export default function App() {
         onOpenNewUserModal={() => setIsUserModalOpen(true)}
         isGatewayOnline={isGatewayOnline}
         orderCount={orders.length}
+        onDeniedAdmin={() => {
+          showToast('🔒 Access Restricted: Admin Studio is only accessible to ROLE_ADMIN accounts.', 'error');
+        }}
       />
 
       {/* Main Content Area */}
@@ -315,6 +319,7 @@ export default function App() {
 
         {activeTab === 'admin' && (
           <AdminStudio
+            currentUser={currentUser}
             products={products}
             users={users}
             adminOrders={adminOrders}
@@ -324,6 +329,11 @@ export default function App() {
             onOpenRegisterUser={() => setIsUserModalOpen(true)}
             onRefreshOrders={loadAdminOrders}
             onUpdateOrderStatus={handleUpdateOrderStatus}
+            onSwitchToAdmin={() => {
+              const adminUser = users.find(u => u.role === 'ROLE_ADMIN') || SEED_USERS[0];
+              setCurrentUser(adminUser);
+              showToast('Switched to Admin QuickMart account', 'success');
+            }}
           />
         )}
 
