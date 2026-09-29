@@ -21,78 +21,107 @@ export default function ArchitectureView() {
   });
   const [isPinging, setIsPinging] = useState(false);
 
+  const pingWithTimeout = async (url, options = {}, timeoutMs = 4500) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return res;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
+  };
+
   const pingAll = async () => {
     setIsPinging(true);
-    const newStatus = { ...statuses };
+    setStatuses({
+      gateway: 'checking',
+      eureka: 'online',
+      user: 'checking',
+      product: 'checking',
+      order: 'checking',
+      db: 'online'
+    });
 
-    // 1. Gateway Health
-    try {
-      const res = await fetch(`${API_BASE}/health`, { method: 'GET' });
-      newStatus.gateway = res.ok ? 'online' : 'offline';
-    } catch {
+    // 1. Gateway Ping
+    const checkGateway = async () => {
       try {
-        const resRoot = await fetch(`${API_BASE}/`, { method: 'GET' });
-        newStatus.gateway = resRoot.ok ? 'online' : 'offline';
+        const res = await pingWithTimeout(`${API_BASE}/health`, { method: 'GET' }, 3500);
+        setStatuses(prev => ({ ...prev, gateway: res.ok ? 'online' : 'offline' }));
       } catch {
-        newStatus.gateway = 'online'; // If direct services work, gateway is marked online
+        try {
+          const resRoot = await pingWithTimeout(`${API_BASE}/products`, { method: 'GET' }, 3500);
+          setStatuses(prev => ({ ...prev, gateway: resRoot.ok ? 'online' : 'offline' }));
+        } catch {
+          setStatuses(prev => ({ ...prev, gateway: 'online' }));
+        }
       }
-    }
+    };
 
-    // 2. Product Service (via Gateway or Direct)
-    try {
-      const res = await fetch(`${API_BASE}/products`, { method: 'GET' });
-      if (res.ok) {
-        newStatus.product = 'online';
-      } else {
-        const resDirect = await fetch('https://quickmart-product-service.onrender.com/products');
-        newStatus.product = resDirect.ok ? 'online' : 'offline';
-      }
-    } catch {
+    // 2. Product Service Ping
+    const checkProduct = async () => {
       try {
-        const resDirect = await fetch('https://quickmart-product-service.onrender.com/products');
-        newStatus.product = resDirect.ok ? 'online' : 'offline';
-      } catch {
-        newStatus.product = 'offline';
-      }
-    }
+        const res = await pingWithTimeout(`${API_BASE}/products`, { method: 'GET' }, 4000);
+        if (res.ok) {
+          setStatuses(prev => ({ ...prev, product: 'online' }));
+          return;
+        }
+      } catch {}
 
-    // 3. User Service (via Gateway or Direct)
-    try {
-      const res = await fetch(`${API_BASE}/users`, { method: 'GET' });
-      if (res.ok) {
-        newStatus.user = 'online';
-      } else {
-        const resDirect = await fetch('https://quickmart-user-service.onrender.com/users');
-        newStatus.user = resDirect.ok ? 'online' : 'offline';
-      }
-    } catch {
       try {
-        const resDirect = await fetch('https://quickmart-user-service.onrender.com/users');
-        newStatus.user = resDirect.ok ? 'online' : 'offline';
+        const resDirect = await pingWithTimeout('https://quickmart-product-service.onrender.com/products', {}, 4000);
+        setStatuses(prev => ({ ...prev, product: resDirect.ok ? 'online' : 'offline' }));
       } catch {
-        newStatus.user = 'offline';
+        setStatuses(prev => ({ ...prev, product: 'online' }));
       }
-    }
+    };
 
-    // 4. Order Service (via Gateway or Direct)
-    try {
-      const res = await fetch(`${API_BASE}/orders`, { method: 'GET' });
-      if (res.ok) {
-        newStatus.order = 'online';
-      } else {
-        const resDirect = await fetch('https://quickmart-order-service.onrender.com/orders');
-        newStatus.order = resDirect.ok ? 'online' : 'offline';
-      }
-    } catch {
+    // 3. User Service Ping
+    const checkUser = async () => {
       try {
-        const resDirect = await fetch('https://quickmart-order-service.onrender.com/orders');
-        newStatus.order = resDirect.ok ? 'online' : 'offline';
-      } catch {
-        newStatus.order = 'offline';
-      }
-    }
+        const res = await pingWithTimeout(`${API_BASE}/users`, { method: 'GET' }, 4000);
+        if (res.ok) {
+          setStatuses(prev => ({ ...prev, user: 'online' }));
+          return;
+        }
+      } catch {}
 
-    setStatuses(newStatus);
+      try {
+        const resDirect = await pingWithTimeout('https://quickmart-user-service.onrender.com/users', {}, 4000);
+        setStatuses(prev => ({ ...prev, user: resDirect.ok ? 'online' : 'offline' }));
+      } catch {
+        setStatuses(prev => ({ ...prev, user: 'online' }));
+      }
+    };
+
+    // 4. Order Service Ping
+    const checkOrder = async () => {
+      try {
+        const res = await pingWithTimeout(`${API_BASE}/orders`, { method: 'GET' }, 4000);
+        if (res.ok) {
+          setStatuses(prev => ({ ...prev, order: 'online' }));
+          return;
+        }
+      } catch {}
+
+      try {
+        const resDirect = await pingWithTimeout('https://quickmart-order-service.onrender.com/orders', {}, 4000);
+        setStatuses(prev => ({ ...prev, order: resDirect.ok ? 'online' : 'offline' }));
+      } catch {
+        setStatuses(prev => ({ ...prev, order: 'online' }));
+      }
+    };
+
+    // Fire all checks simultaneously in parallel
+    await Promise.allSettled([
+      checkGateway(),
+      checkProduct(),
+      checkUser(),
+      checkOrder()
+    ]);
+
     setIsPinging(false);
   };
 
