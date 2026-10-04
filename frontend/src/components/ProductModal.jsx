@@ -1,28 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Upload, Link2, Sparkles, Loader2 } from 'lucide-react';
+import ProductImagesDropzone from './ProductImagesDropzone';
+import { api } from '../services/api';
 
 export default function ProductModal({ isOpen, onClose, onSave, editingProduct }) {
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    category: 'Electronics',
     price: '',
-    stockQuantity: '',
+    stockQuantity: 20,
     rating: 4.8,
     imageUrl: '',
     description: ''
   });
 
+  const [imageMode, setImageMode] = useState('upload'); // 'upload' | 'url'
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
   useEffect(() => {
     if (editingProduct) {
       setFormData({
         name: editingProduct.name || '',
-        category: editingProduct.category || '',
+        category: editingProduct.category || 'Electronics',
         price: editingProduct.price || '',
-        stockQuantity: editingProduct.stockQuantity || '',
+        stockQuantity: editingProduct.stockQuantity ?? 20,
         rating: editingProduct.rating || 4.8,
         imageUrl: editingProduct.imageUrl || '',
         description: editingProduct.description || ''
       });
+      setSelectedFiles([]);
+      if (editingProduct.imageUrl) {
+        setImageMode('url');
+      } else {
+        setImageMode('upload');
+      }
     } else {
       setFormData({
         name: '',
@@ -33,30 +46,67 @@ export default function ProductModal({ isOpen, onClose, onSave, editingProduct }
         imageUrl: '',
         description: ''
       });
+      setSelectedFiles([]);
+      setImageMode('upload');
     }
+    setUploadError('');
+    setIsUploading(false);
   }, [editingProduct, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setUploadError('');
+
+    let finalImageUrl = formData.imageUrl;
+
+    // If local files are chosen in upload mode, upload them to UploadThing first
+    if (imageMode === 'upload' && selectedFiles.length > 0) {
+      try {
+        setIsUploading(true);
+        const uploadRes = await api.uploadProductImages(selectedFiles);
+        if (uploadRes && uploadRes.urls && uploadRes.urls.length > 0) {
+          finalImageUrl = uploadRes.urls[0];
+        } else if (uploadRes && uploadRes.url) {
+          finalImageUrl = uploadRes.url;
+        }
+      } catch (err) {
+        setIsUploading(false);
+        setUploadError(err.message || 'Image upload failed.');
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
+    if (!finalImageUrl) {
+      finalImageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600';
+    }
+
     onSave({
       ...formData,
       price: parseFloat(formData.price),
       stockQuantity: parseInt(formData.stockQuantity),
       rating: parseFloat(formData.rating),
-      imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600'
+      imageUrl: finalImageUrl
     });
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="modal-card modal-card--enhanced">
         <div className="modal-header">
-          <h3>{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
-          <button className="modal-close" onClick={onClose}><X size={20} /></button>
+          <div>
+            <div className="modal-badge">ADMIN CATALOG</div>
+            <h3>{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close modal">
+            <X size={20} />
+          </button>
         </div>
-        <form onSubmit={handleSubmit}>
+
+        <form onSubmit={handleSubmit} className="product-modal-form">
           <div className="form-group">
             <label>Product Name *</label>
             <input 
@@ -65,20 +115,27 @@ export default function ProductModal({ isOpen, onClose, onSave, editingProduct }
               required 
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Wireless Gaming Mouse"
+              placeholder="e.g. Sony WH-1000XM5 Wireless Headphones"
             />
           </div>
+
           <div className="form-row">
             <div className="form-group">
               <label>Category *</label>
-              <input 
-                type="text" 
+              <select 
                 className="form-control" 
                 required 
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Electronics, Fashion, etc."
-              />
+              >
+                <option value="Electronics">Electronics</option>
+                <option value="Footwear">Footwear</option>
+                <option value="Fashion">Fashion</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Home & Kitchen">Home & Kitchen</option>
+                <option value="Sports & Fitness">Sports & Fitness</option>
+                <option value="Accessories">Accessories</option>
+              </select>
             </div>
             <div className="form-group">
               <label>Price ($) *</label>
@@ -93,6 +150,7 @@ export default function ProductModal({ isOpen, onClose, onSave, editingProduct }
               />
             </div>
           </div>
+
           <div className="form-row">
             <div className="form-group">
               <label>Stock Quantity *</label>
@@ -117,29 +175,91 @@ export default function ProductModal({ isOpen, onClose, onSave, editingProduct }
               />
             </div>
           </div>
-          <div className="form-group">
-            <label>Image URL</label>
-            <input 
-              type="url" 
-              className="form-control" 
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
-            />
+
+          {/* Product Image Section with UploadThing dropzone & URL mode toggle */}
+          <div className="product-image-section">
+            <div className="image-mode-tabs">
+              <button 
+                type="button" 
+                className={`image-mode-tab ${imageMode === 'upload' ? 'active' : ''}`}
+                onClick={() => setImageMode('upload')}
+              >
+                <Upload size={14} /> Upload Image (UploadThing)
+              </button>
+              <button 
+                type="button" 
+                className={`image-mode-tab ${imageMode === 'url' ? 'active' : ''}`}
+                onClick={() => setImageMode('url')}
+              >
+                <Link2 size={14} /> Direct Image URL
+              </button>
+            </div>
+
+            {imageMode === 'upload' ? (
+              <div className="image-upload-wrap">
+                <ProductImagesDropzone 
+                  images={selectedFiles}
+                  onChange={setSelectedFiles}
+                  maxImages={3}
+                  isUploading={isUploading}
+                />
+              </div>
+            ) : (
+              <div className="form-group" style={{ marginTop: '0.75rem' }}>
+                <label>Image URL</label>
+                <input 
+                  type="url" 
+                  className="form-control" 
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                />
+                {formData.imageUrl && (
+                  <div className="url-preview-card">
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="URL Preview" 
+                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600'; }}
+                    />
+                    <span>Image Preview</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {uploadError && (
+              <div className="form-error-banner">
+                {uploadError}
+              </div>
+            )}
           </div>
-          <div className="form-group">
+
+          <div className="form-group" style={{ marginTop: '0.75rem' }}>
             <label>Description</label>
             <textarea 
               className="form-control" 
               rows="3" 
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Detailed specifications..."
+              placeholder="Detailed specifications and key features..."
             />
           </div>
+
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save to Database</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isUploading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={isUploading}>
+              {isUploading ? (
+                <>
+                  <Loader2 size={16} className="spin-icon" /> Uploading & Saving...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} /> Save to Database
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>

@@ -38,6 +38,8 @@ services:
     envVars:
       - key: PORT
         value: 8082
+      - key: UPLOADTHING_TOKEN
+        sync: false
 
   # 5. Order Service
   - type: web

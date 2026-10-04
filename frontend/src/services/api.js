@@ -162,6 +162,48 @@ export const api = {
     return true;
   },
 
+  // UploadThing Image Upload API (Microservice + Gateway integration)
+  async uploadProductImages(files) {
+    const formData = new FormData();
+    const fileList = Array.isArray(files) ? files : Array.from(files);
+    fileList.forEach(file => formData.append('files', file));
+
+    const sendUpload = async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/products/upload-images`, {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.error || `Upload failed (HTTP ${res.status})`);
+    };
+
+    try {
+      return await Promise.any([
+        sendUpload(API_BASE),
+        sendUpload(PRODUCT_SERVICE_DIRECT)
+      ]);
+    } catch (e) {
+      // Local fallback in case network / server is unavailable during dev
+      if (fileList.length > 0 && typeof FileReader !== 'undefined') {
+        const readAsDataUrl = (file) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const urls = await Promise.all(fileList.map(readAsDataUrl));
+        return { urls, url: urls[0], success: true };
+      }
+      throw new Error('Image upload failed. Check connection or UploadThing settings.');
+    }
+  },
+
+  async uploadProductImage(file) {
+    const res = await this.uploadProductImages([file]);
+    return res?.urls?.[0] || res?.url;
+  },
+
   // Users API (Fast Parallel Race between Gateway and User Service)
   async getUsers() {
     try {

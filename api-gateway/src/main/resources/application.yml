@@ -12,7 +12,7 @@ spring:
             - id: product-service
               uri: ${PRODUCT_SERVICE_URL:http://localhost:8082}
               predicates:
-                - Path=/products, /products/**
+                - Path=/products, /products/**, /admin/uploads/**, /api/admin/uploads/**
 
             - id: order-service
               uri: ${ORDER_SERVICE_URL:http://localhost:8083}
