@@ -209,18 +209,37 @@ export default function App() {
   const handleSaveProduct = async (productData) => {
     try {
       if (editingProduct?.id) {
-        await api.updateProduct(editingProduct.id, productData);
+        const updated = await api.updateProduct(editingProduct.id, productData);
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? (updated || { ...p, ...productData }) : p));
         showToast('Product updated in PostgreSQL!', 'success');
       } else {
-        await api.createProduct(productData);
+        const created = await api.createProduct(productData);
+        if (created) {
+          setProducts(prev => [created, ...prev.filter(p => p.id !== created.id)]);
+        }
         showToast('New product saved to PostgreSQL!', 'success');
       }
-    } catch {
-      showToast('Product saved locally', 'info');
+      setIsProductModalOpen(false);
+      setEditingProduct(null);
+      await loadProducts();
+    } catch (err) {
+      console.error('Save product error:', err);
+      // Local fallback so the newly added product is never lost from the UI
+      if (editingProduct?.id) {
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...productData } : p));
+        showToast('Product updated locally', 'info');
+      } else {
+        const localProduct = {
+          ...productData,
+          id: Date.now(),
+          createdAt: new Date().toISOString()
+        };
+        setProducts(prev => [localProduct, ...prev]);
+        showToast('Product added to catalog (offline/local mode)', 'info');
+      }
+      setIsProductModalOpen(false);
+      setEditingProduct(null);
     }
-    setIsProductModalOpen(false);
-    setEditingProduct(null);
-    loadProducts();
   };
 
   const handleDeleteProduct = async (id) => {

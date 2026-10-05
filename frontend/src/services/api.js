@@ -126,40 +126,76 @@ export const api = {
   },
 
   async createProduct(product) {
-    const res = await fetch(`${API_BASE}/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
-    }).catch(() => fetch(`${PRODUCT_SERVICE_DIRECT}/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
-    }));
+    const sendReq = async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product)
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      const errJson = await res.json().catch(() => null);
+      if (errJson && errJson.error) {
+        throw new Error(errJson.error);
+      }
+      throw new Error(`HTTP ${res.status}`);
+    };
 
-    if (!res || !res.ok) throw new Error('Failed to create product in PostgreSQL');
-    return await res.json();
+    try {
+      return await Promise.any([
+        sendReq(API_BASE),
+        sendReq(PRODUCT_SERVICE_DIRECT)
+      ]);
+    } catch (err) {
+      if (err && err.errors) {
+        for (const e of err.errors) {
+          if (e && e.message && !e.message.startsWith('HTTP')) {
+            throw e;
+          }
+        }
+      }
+      throw new Error('Failed to create product in PostgreSQL');
+    }
   },
 
   async updateProduct(id, product) {
-    const res = await fetch(`${API_BASE}/products/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
-    }).catch(() => fetch(`${PRODUCT_SERVICE_DIRECT}/products/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
-    }));
+    const sendReq = async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product)
+      });
+      if (res.ok) return await res.json();
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.error || `HTTP ${res.status}`);
+    };
 
-    if (!res || !res.ok) throw new Error('Failed to update product');
-    return await res.json();
+    try {
+      return await Promise.any([
+        sendReq(API_BASE),
+        sendReq(PRODUCT_SERVICE_DIRECT)
+      ]);
+    } catch (e) {
+      throw new Error('Failed to update product');
+    }
   },
 
   async deleteProduct(id) {
-    const res = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' })
-      .catch(() => fetch(`${PRODUCT_SERVICE_DIRECT}/products/${id}`, { method: 'DELETE' }));
-    if (!res || !res.ok) throw new Error('Failed to delete product');
-    return true;
+    const sendReq = async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/products/${id}`, { method: 'DELETE' });
+      if (res.ok) return true;
+      throw new Error(`HTTP ${res.status}`);
+    };
+
+    try {
+      return await Promise.any([
+        sendReq(API_BASE),
+        sendReq(PRODUCT_SERVICE_DIRECT)
+      ]);
+    } catch (e) {
+      throw new Error('Failed to delete product');
+    }
   },
 
   // UploadThing Image Upload API (Microservice + Gateway integration)

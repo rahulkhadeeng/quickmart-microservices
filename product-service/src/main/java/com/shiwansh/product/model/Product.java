@@ -14,7 +14,7 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
@@ -25,7 +25,7 @@ public class Product {
 
     private Integer stockQuantity = 0;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
     private Double rating = 4.5;
